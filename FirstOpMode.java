@@ -51,10 +51,12 @@ public class FirstOpMode extends LinearOpMode {
         right_motor        = hardwareMap.dcMotor.get("right_front");
         collection_motor1  = hardwareMap.dcMotor.get("collect1");
         collection_motor2  = hardwareMap.dcMotor.get("collect2");
+        
         left_sort          = hardwareMap.servo.get("left_sort");
         right_sort         = hardwareMap.servo.get("right_sort");
         left_eject         = hardwareMap.servo.get("left_eject");
         right_eject        = hardwareMap.servo.get("right_eject");
+        
         color_center       = hardwareMap.colorSensor.get("color_center");
         color_left         = hardwareMap.colorSensor.get("color_left");
         color_right        = hardwareMap.colorSensor.get("color_right");
