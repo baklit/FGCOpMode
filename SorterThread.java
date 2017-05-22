@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.FGCOpMode;
 
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -6,27 +6,29 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 class SorterThread implements Runnable{
     private Thread       thread;
-    private DcMotor     motor;
+    private DcMotor     motor, shuffleMotor;
     private Servo       leftServo, rightServo;
     private ColorSensor centerColor, leftColor, rightColor;
     boolean running = false;
 
-    SorterThread(DcMotor m, Servo ls, Servo rs, ColorSensor cc, ColorSensor cl, ColorSensor cr){
-        thread      = new Thread(this);
-        motor       = m;
-        leftServo   = ls;
-        rightServo  = rs;
-        centerColor = cc;
-        leftColor   = cl;
-        rightColor  = cr;
+    SorterThread(DcMotor m, DcMotor s, Servo ls, Servo rs, ColorSensor cc, ColorSensor cl, ColorSensor cr){
+        thread       = new Thread(this);
+        motor        = m;
+        shuffleMotor = s;
+        leftServo    = ls;
+        rightServo   = rs;
+        centerColor  = cc;
+        leftColor    = cl;
+        rightColor   = cr;
 
         thread.start();
     }
 
     public void run(){
         while (true) {
-            while (running) {
+            while (this.running) {
                 motor.setPower(1);
+                shuffleMotor.setPower(1);
 
                 determineServo(leftServo, leftColor);
                 determineServo(rightServo, rightColor);
@@ -41,7 +43,7 @@ class SorterThread implements Runnable{
     }
 
     void kill(){
-        running = false;
+        this.running = false;
         thread.interrupt();
     }
 
@@ -76,6 +78,7 @@ class SorterThread implements Runnable{
 
     private void stopMotors(){
         motor.setPower(0);
+        shuffleMotor.setPower(0);
         leftServo.setPosition(0.5);
         rightServo.setPosition(0.5);
     }
