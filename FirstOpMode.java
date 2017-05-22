@@ -51,12 +51,10 @@ public class FirstOpMode extends LinearOpMode {
         right_motor        = hardwareMap.dcMotor.get("right_front");
         collection_motor1  = hardwareMap.dcMotor.get("collect1");
         collection_motor2  = hardwareMap.dcMotor.get("collect2");
-        
         left_sort          = hardwareMap.servo.get("left_sort");
         right_sort         = hardwareMap.servo.get("right_sort");
         left_eject         = hardwareMap.servo.get("left_eject");
         right_eject        = hardwareMap.servo.get("right_eject");
-        
         color_center       = hardwareMap.colorSensor.get("color_center");
         color_left         = hardwareMap.colorSensor.get("color_left");
         color_right        = hardwareMap.colorSensor.get("color_right");
@@ -68,7 +66,7 @@ public class FirstOpMode extends LinearOpMode {
         waitForStart();
 
         Sorter = new SorterThread(sorting_motor, shuffle_motor, left_sort, right_sort, color_center, color_left, color_right);
-        
+
         while(opModeIsActive()) {
             telemetry.addData("leftStick(vanilla) ", "x:%f y:%f", gamepad1.left_stick_x, gamepad1.left_stick_y);
             telemetry.addData("leftStick(scaled)", "x:%f y:%f", convertPowerToCurve(gamepad1.left_stick_x), convertPowerToCurve(gamepad1.left_stick_y));
