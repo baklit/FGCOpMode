@@ -1,17 +1,27 @@
 package org.firstinspires.ftc.teamcode.FGCOpMode;
 
-import com.qualcomm.robotcore.hardware.ColorSensor;
+import android.graphics.Color;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-class SorterThread implements Runnable{
-    private Thread       thread;
-    private DcMotor     motor, shuffleMotor;
-    private Servo       leftServo, rightServo;
-    private ColorSensor centerColor, leftColor, rightColor;
-    boolean running = false;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-    SorterThread(DcMotor m, DcMotor s, Servo ls, Servo rs, ColorSensor cc, ColorSensor cl, ColorSensor cr){
+
+enum BallType{
+    CONTAMINANT,
+    CLEAN,
+    UNKNOWN
+}
+
+class SorterThread implements Runnable{
+    private Thread        thread;
+    private DcMotor       motor, shuffleMotor;
+    private Servo         leftServo, rightServo;
+    private ColDistSensor centerColor, leftColor, rightColor;
+    boolean running     = false;
+
+    SorterThread(DcMotor m, DcMotor s, Servo ls, Servo rs, ColDistSensor cc, ColDistSensor cl, ColDistSensor cr){
         thread       = new Thread(this);
         motor        = m;
         shuffleMotor = s;
@@ -47,24 +57,47 @@ class SorterThread implements Runnable{
         thread.interrupt();
     }
 
-    private void determineServo(Servo servo, ColorSensor sensor){
-        if ((float) sensor.red() / sensor.alpha() > 0.4) {
-            servo.setPosition(1);
-        } else if ((float) sensor.blue() / sensor.alpha() > 0.4) {
-            servo.setPosition(0);
-        } else {
-            servo.setPosition(0.5);
+    private BallType determineBallType(ColDistSensor sensor){
+        float hsv[] = {0, 0, 0};
+        Color.colorToHSV(sensor.argb(), hsv);
+
+        float hue = hsv[0];
+
+        if (hue < 30 || hue > 280){
+            return BallType.CONTAMINANT;
+        } else if (Math.abs(240.0 - hue) < 50.0){
+            return BallType.CLEAN;
         }
+
+        return BallType.UNKNOWN;
     }
 
-    private void determineServo(Servo servo_left, Servo servo_right, ColorSensor sensor){
-        if ((float) sensor.red() / sensor.alpha() > 0.4) {
-            servo_left.setPosition(1);
-            servo_right.setPosition(1);
+    private void determineServo(Servo servo, ColDistSensor sensor){
+        BallType ball = determineBallType(sensor);
 
-        } else if ((float) sensor.blue() / sensor.alpha() > 0.4) {
-            servo_left.setPosition(0);
-            servo_right.setPosition(0);
+        if(ball != BallType.UNKNOWN && sensor.getDistance(DistanceUnit.MM) < 20){
+            switch(ball){
+                case CONTAMINANT: servo.setPosition(1.0);
+                    break;
+                case CLEAN: servo.setPosition(0.0);
+                    break;
+            }
+
+        } else servo.setPosition(0.5);
+    }
+
+    private void determineServo(Servo servo_left, Servo servo_right, ColDistSensor sensor){
+        BallType ball = determineBallType(sensor);
+
+        if(ball != BallType.UNKNOWN && sensor.getDistance(DistanceUnit.MM) < 20){
+            switch(ball){
+                case CONTAMINANT: servo_left.setPosition(1.0);
+                    servo_right.setPosition(1.0);
+                    break;
+                case CLEAN: servo_left.setPosition(0.0);
+                    servo_right.setPosition(0.0);
+                    break;
+            }
         }
     }
 
@@ -82,4 +115,5 @@ class SorterThread implements Runnable{
         leftServo.setPosition(0.5);
         rightServo.setPosition(0.5);
     }
+
 }
