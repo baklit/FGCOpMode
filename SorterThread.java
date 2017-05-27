@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.FGCOpMode;
 
 import android.graphics.Color;
 
+import com.qualcomm.hardware.lynx.LynxI2cColorRangeSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -18,10 +19,11 @@ class SorterThread implements Runnable{
     private Thread        thread;
     private DcMotor       motor, shuffleMotor;
     private Servo         leftServo, rightServo;
-    private ColDistSensor centerColor, leftColor, rightColor;
-    boolean running     = false;
+    private LynxI2cColorRangeSensor centerColor, leftColor, rightColor;
+    boolean running = false;
+    boolean killed = false;
 
-    SorterThread(DcMotor m, DcMotor s, Servo ls, Servo rs, ColDistSensor cc, ColDistSensor cl, ColDistSensor cr){
+    SorterThread(DcMotor m, DcMotor s, Servo ls, Servo rs, LynxI2cColorRangeSensor cc, LynxI2cColorRangeSensor cl, LynxI2cColorRangeSensor cr){
         thread       = new Thread(this);
         motor        = m;
         shuffleMotor = s;
@@ -35,14 +37,19 @@ class SorterThread implements Runnable{
     }
 
     public void run(){
-        while (true) {
-            while (this.running) {
-                motor.setPower(1);
+        while (!killed) {
+            while (running) {
                 shuffleMotor.setPower(1);
 
-                determineServo(leftServo, leftColor);
-                determineServo(rightServo, rightColor);
+                determineServo(leftServo, leftColor, 1.0);
+                determineServo(rightServo, rightColor, 0.0);
                 determineServo(leftServo, rightServo, centerColor);
+
+                if (leftColor.getDistance(DistanceUnit.MM) < 56 || rightColor.getDistance(DistanceUnit.MM) < 56){
+                    motor.setPower(0);
+                } else {
+                    motor.setPower(1);
+                }
 
                 sleep(10);
             }
@@ -53,11 +60,15 @@ class SorterThread implements Runnable{
     }
 
     void kill(){
-        this.running = false;
-        thread.interrupt();
+        running = false;
+        killed = true;
+
+        stopMotors();
+        FirstOpMode.telemetryProxy.addLine("Sorter thread has been killed!");
+        FirstOpMode.telemetryProxy.update();
     }
 
-    private BallType determineBallType(ColDistSensor sensor){
+    private BallType determineBallType(LynxI2cColorRangeSensor sensor){
         float hsv[] = {0, 0, 0};
         Color.colorToHSV(sensor.argb(), hsv);
 
@@ -72,24 +83,25 @@ class SorterThread implements Runnable{
         return BallType.UNKNOWN;
     }
 
-    private void determineServo(Servo servo, ColDistSensor sensor){
+    private void determineServo(Servo servo, LynxI2cColorRangeSensor sensor, double default_direction){
         BallType ball = determineBallType(sensor);
 
-        if(ball != BallType.UNKNOWN && sensor.getDistance(DistanceUnit.MM) < 20){
+        if(sensor.getDistance(DistanceUnit.MM) < 100){
             switch(ball){
                 case CONTAMINANT: servo.setPosition(1.0);
                     break;
                 case CLEAN: servo.setPosition(0.0);
                     break;
+                case UNKNOWN: servo.setPosition(default_direction);
             }
 
         } else servo.setPosition(0.5);
     }
 
-    private void determineServo(Servo servo_left, Servo servo_right, ColDistSensor sensor){
+    private void determineServo(Servo servo_left, Servo servo_right, LynxI2cColorRangeSensor sensor){
         BallType ball = determineBallType(sensor);
 
-        if(ball != BallType.UNKNOWN && sensor.getDistance(DistanceUnit.MM) < 20){
+        if(ball != BallType.UNKNOWN && sensor.getDistance(DistanceUnit.MM) < 100){
             switch(ball){
                 case CONTAMINANT: servo_left.setPosition(1.0);
                     servo_right.setPosition(1.0);
@@ -105,7 +117,8 @@ class SorterThread implements Runnable{
         try {
             Thread.sleep(t);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            FirstOpMode.telemetryProxy.addData("Interrupted Exception occured", "Line %d", e.getStackTrace()[0].getLineNumber());
+            FirstOpMode.telemetryProxy.update();
         }
     }
 
