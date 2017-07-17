@@ -48,7 +48,15 @@ class SorterThread implements Runnable{
                 if (leftColor.getDistance(DistanceUnit.MM) < 56 || rightColor.getDistance(DistanceUnit.MM) < 56){
                     motor.setPower(0);
                 } else {
-                    motor.setPower(1);
+                    motor.setPower(0.6);
+                }
+
+                if (Math.abs(FirstOpMode.gamepad2Proxy.left_stick_x) > 0.1){
+                    leftServo.setPosition((FirstOpMode.gamepad2Proxy.left_stick_x + 1)/2.0);
+                }
+
+                if (Math.abs(FirstOpMode.gamepad2Proxy.right_stick_x) > 0.1){
+                    rightServo.setPosition((FirstOpMode.gamepad2Proxy.right_stick_x + 1)/2.0);
                 }
 
                 sleep(10);
